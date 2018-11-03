@@ -52,9 +52,9 @@ class ofApp : public ofBaseApp{
     int rotateY, globeRadius;
     
     ofSpherePrimitive globe;
-    ofImage globeImage;
     ofTexture globeTexture;
     ofEasyCam cam;
+    ofLight light;
     
     
 };

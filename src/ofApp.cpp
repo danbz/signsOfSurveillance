@@ -3,7 +3,7 @@
 //--------------------------------------------------------------
 void ofApp::setup(){
     globeRadius = 500;
-    int maxSigns = 10;
+    int maxSigns = 5;
     for (int i=0; i<maxSigns; i++){
         //ofFile = newPath;
         string newPath;
@@ -27,10 +27,17 @@ void ofApp::setup(){
    }
     
     rotateY = 0;
+    globe.set(globeRadius, 50);
     
-    globeImage.load("EarthMap_1024x512_hFlip.jpg");
-    globeTexture = globeImage.getTexture();
-    globe.set(globeRadius, 10);
+    ofDisableArbTex();
+    ofLoadImage(globeTexture,"EarthMap_1024x512.jpg");
+    
+    ofDisableAlphaBlending();
+    ofEnableDepthTest();
+   // light.enable();
+    light.setPosition(ofVec3f(1000,1000,600));
+    light.lookAt(ofVec3f(0,0,0));
+    
 }
 
 //--------------------------------------------------------------
@@ -44,12 +51,13 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-    ofEnableDepthTest();
     cam.begin();
+    ofDrawAxis(600);
+    ofDrawRotationAxes(600);
      globeTexture.bind();
-    globe.drawWireframe();
-    //globe.draw();
-    
+    globe.draw();
+   // globe.drawWireframe();
+
     globeTexture.unbind();
     // ofRotateYDeg(rotateY);
     
@@ -57,16 +65,17 @@ void ofApp::draw(){
         ofPushMatrix();
         // ofRotateYDeg(i*(360/signsOfSurveillance.size()));
         // ofTranslate(globeRadius, 0);
-        ofVec3f drawLoc = sphericalToCartesian(signsOfSurveillance[i].getLat(), signsOfSurveillance[i].getLong(), globeRadius);
-        ofTranslate(drawLoc);
+        ofVec3f drawLoc = sphericalToCartesian(signsOfSurveillance[i].getLat(), signsOfSurveillance[i].getLong(), globeRadius*1.05f);
+        ofDrawCircle(drawLoc.x, drawLoc.y, drawLoc.z, 10);
+       // ofTranslate(drawLoc);
         // cout << "drawloc: " << i << " " << drawLoc << endl;
-        signsOfSurveillance[i].draw(0, 0, 40, 20);
+        ofTranslate(0,0,drawLoc.z);
+        signsOfSurveillance[i].draw(drawLoc.x, drawLoc.y, 40, 20);
         
         ofPopMatrix();
     }
     
     cam.end();
-    ofDisableDepthTest();
 }
 
 //--------------------------------------------------------------
@@ -216,17 +225,26 @@ ofVec3f ofApp::sphericalToCartesian( float lat, float lon, float radius )
 {
     ofVec3f result;
     
-    lat    *= -1;        // inverse latitude.
+    lat *= -1;        // inverse latitude.
     lat += 90;        // latitude offset to match geometry of the sphere.
     lon *= -1;        // inverse longitude.
     lon -= 90;        // longitude offset to match geometry of the sphere.
     
-    lat *= DEG_TO_RAD;
-    lon *= DEG_TO_RAD;
+        lat *= DEG_TO_RAD;
+        lon *= DEG_TO_RAD;
+       //  original version
+        result.x = radius * sin( lat ) * cos( lon );
+        result.y = radius * sin( lat ) * sin( lon );
+        result.z = radius * cos( lat );
     
-    result.x = radius * sin( lat ) * cos( lon );
-    result.y = radius * sin( lat ) * sin( lon );
-    result.z = radius * cos( lat );
+    //    // alternate version from https://stackoverflow.com/questions/1185408/converting-from-longitude-latitude-to-cartesian-coordinates#1185413
+    // https://vvvv.org/blog/polar-spherical-and-geographic-coordinates
+//
+//    lat = ofDegToRad(lat);
+//    lon = ofDegToRad(lon);
+//    result.x = radius * cos(lat) * cos(lon);
+//    result.y = radius * cos(lat) * sin(lon);
+//    result.z = radius *sin(lat);
     
     return result;
 }
