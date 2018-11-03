@@ -46,9 +46,14 @@ class ofApp : public ofBaseApp{
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
     
-    vector<sign> signsOfSurveillance;
-    int rotateY;
+    ofVec3f sphericalToCartesian( float lat, float lon, float radius );
     
+    vector<sign> signsOfSurveillance;
+    int rotateY, globeRadius;
+    
+    ofSpherePrimitive globe;
+    ofImage globeImage;
+    ofTexture globeTexture;
     ofEasyCam cam;
     
     

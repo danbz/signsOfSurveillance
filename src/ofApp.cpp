@@ -2,12 +2,12 @@
 
 //--------------------------------------------------------------
 void ofApp::setup(){
-    
-    int maxSigns = 3;
+    globeRadius = 500;
+    int maxSigns = 10;
     for (int i=0; i<maxSigns; i++){
         //ofFile = newPath;
         string newPath;
-        newPath = "sign" + ofToString(i) + ".jpg";
+        newPath = "images/sign" + ofToString(i) + ".jpg";
         
 //        if (newPath.exists()){
 //            ofLogVerbose("The file exists - now checking the type via file extension");
@@ -27,6 +27,10 @@ void ofApp::setup(){
    }
     
     rotateY = 0;
+    
+    globeImage.load("EarthMap_1024x512_hFlip.jpg");
+    globeTexture = globeImage.getTexture();
+    globe.set(globeRadius, 10);
 }
 
 //--------------------------------------------------------------
@@ -42,15 +46,25 @@ void ofApp::update(){
 void ofApp::draw(){
     ofEnableDepthTest();
     cam.begin();
-   // ofRotateYDeg(rotateY);
+     globeTexture.bind();
+    globe.drawWireframe();
+    //globe.draw();
+    
+    globeTexture.unbind();
+    // ofRotateYDeg(rotateY);
+    
     for (int i=0; i< signsOfSurveillance.size(); i++){
         ofPushMatrix();
-        ofRotateYDeg(i*(360/signsOfSurveillance.size()));
-        
-        signsOfSurveillance[i].draw(0, 0 , 400, 200);
+        // ofRotateYDeg(i*(360/signsOfSurveillance.size()));
+        // ofTranslate(globeRadius, 0);
+        ofVec3f drawLoc = sphericalToCartesian(signsOfSurveillance[i].getLat(), signsOfSurveillance[i].getLong(), globeRadius);
+        ofTranslate(drawLoc);
+        // cout << "drawloc: " << i << " " << drawLoc << endl;
+        signsOfSurveillance[i].draw(0, 0, 40, 20);
         
         ofPopMatrix();
     }
+    
     cam.end();
     ofDisableDepthTest();
 }
@@ -117,12 +131,8 @@ void ofApp::dragEvent(ofDragInfo dragInfo){
 sign::sign(){  // sign constructor
     
     // load image from supplied path
-    
     // load xml
-    
-    
     // extract lat long etc from XML
-    
 }
 
 //--------------------------------------------------------------
@@ -199,3 +209,24 @@ void sign::draw(int x, int y, int width, int height){
     // 8: lower left of image
     // 9: undefined
 };
+
+//--------------------------------------------------------------
+
+ofVec3f ofApp::sphericalToCartesian( float lat, float lon, float radius )
+{
+    ofVec3f result;
+    
+    lat    *= -1;        // inverse latitude.
+    lat += 90;        // latitude offset to match geometry of the sphere.
+    lon *= -1;        // inverse longitude.
+    lon -= 90;        // longitude offset to match geometry of the sphere.
+    
+    lat *= DEG_TO_RAD;
+    lon *= DEG_TO_RAD;
+    
+    result.x = radius * sin( lat ) * cos( lon );
+    result.y = radius * sin( lat ) * sin( lon );
+    result.z = radius * cos( lat );
+    
+    return result;
+}
