@@ -47,14 +47,18 @@ class ofApp : public ofBaseApp{
 		void gotMessage(ofMessage msg);
     
     ofVec3f sphericalToCartesian( float lat, float lon, float radius );
+    void processOpenFileSelection(ofFileDialogResult openFileResult);
     
     vector<sign> signsOfSurveillance;
-    int rotateY, globeRadius;
+    float rotateY;
+    int globeRadius;
     
     ofSpherePrimitive globe;
     ofTexture globeTexture;
     ofEasyCam cam;
     ofLight light;
+    
+    bool b_drawGui;
     
     
 };

@@ -3,30 +3,30 @@
 //--------------------------------------------------------------
 void ofApp::setup(){
     globeRadius = 500;
-    int maxSigns = 5;
-    for (int i=0; i<maxSigns; i++){
-        //ofFile = newPath;
-        string newPath;
-        newPath = "images/sign" + ofToString(i) + ".jpg";
-        
-//        if (newPath.exists()){
-//            ofLogVerbose("The file exists - now checking the type via file extension");
-//            string fileExtension = ofToUpper(newPath.getExtension());
+   // int maxSigns = 5;
+//    for (int i=0; i<maxSigns; i++){
+//        //ofFile = newPath;
+//        string newPath;
+//        newPath = "images/sign" + ofToString(i) + ".jpg";
 //
-//            //We only want text
-//            if (fileExtension == "jpg") {
+////        if (newPath.exists()){
+////            ofLogVerbose("The file exists - now checking the type via file extension");
+////            string fileExtension = ofToUpper(newPath.getExtension());
+////
+////            //We only want text
+////            if (fileExtension == "jpg") {
+////
+////                // load the image file
+//                sign newSign;
+//                newSign.load(newPath);
+//                signsOfSurveillance.push_back(newSign);
 //
-//                // load the image file
-                sign newSign;
-                newSign.load(newPath);
-                signsOfSurveillance.push_back(newSign);
-                
-//            }
-//        }
-//
-   }
+////            }
+////        }
+////
+//   }
     
-    rotateY = 0;
+    rotateY = 0.0f;
     globe.set(globeRadius, 50);
     
     ofDisableArbTex();
@@ -43,7 +43,7 @@ void ofApp::setup(){
 //--------------------------------------------------------------
 void ofApp::update(){
     if (rotateY < 360){
-        rotateY++;
+        rotateY+=0.1;
     } else {
         rotateY =0;
     }
@@ -52,20 +52,22 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
     cam.begin();
+    ofRotateYDeg(rotateY);
+
     ofDrawAxis(600);
-    ofDrawRotationAxes(600);
+   // ofDrawRotationAxes(600);
      globeTexture.bind();
     globe.draw();
    // globe.drawWireframe();
 
     globeTexture.unbind();
-    // ofRotateYDeg(rotateY);
     
     for (int i=0; i< signsOfSurveillance.size(); i++){
         ofPushMatrix();
         // ofRotateYDeg(i*(360/signsOfSurveillance.size()));
         // ofTranslate(globeRadius, 0);
         ofVec3f drawLoc = sphericalToCartesian(signsOfSurveillance[i].getLat(), signsOfSurveillance[i].getLong(), globeRadius*1.05f);
+        
         ofDrawCircle(drawLoc.x, drawLoc.y, drawLoc.z, 10);
        // ofTranslate(drawLoc);
         // cout << "drawloc: " << i << " " << drawLoc << endl;
@@ -86,6 +88,40 @@ void ofApp::keyPressed(int key){
 //--------------------------------------------------------------
 void ofApp::keyReleased(int key){
 
+    switch (key) {
+        case 'g':
+        case 'G':
+            b_drawGui =!b_drawGui;
+            break;
+            
+        case 'f':
+        case 'F':
+            ofToggleFullscreen();
+            
+            break;
+            
+        case ' ': // reset location
+           
+            break;
+            
+        case 'l':
+            
+            //Open the Open File Dialog to load text file
+            ofFileDialogResult openFileResult= ofSystemLoadDialog("Select a folder with jpg image files");
+            
+            //Check if the user opened a file
+            if (openFileResult.bSuccess){
+                
+                ofLogVerbose("User selected a folder");
+                
+                //We have a file, check it and process it
+                processOpenFileSelection(openFileResult);
+                
+            }else {
+                ofLogVerbose("User hit cancel");
+            }
+            break;
+    }
 }
 
 //--------------------------------------------------------------
@@ -202,13 +238,13 @@ void sign::draw(int x, int y, int width, int height){
     
     string latLong;
     latLong = ofToString(exifData.GeoLocation.Latitude) + ", " + ofToString(exifData.GeoLocation.Longitude);
-    latLong += " orientation: " + ofToString(exifData.Orientation);
+    //latLong += " orientation: " + ofToString(exifData.Orientation);
 
   //  image.rotate90(1);
     
     image.draw( x,  y, width, height);
-    ofDrawBitmapString(ofToString(exifData.DateTimeOriginal), x, y + height+20);
-    ofDrawBitmapString(latLong, x, y + height + 40);
+   // ofDrawBitmapString(ofToString(exifData.DateTimeOriginal), x, y + height+20);
+    ofDrawBitmapString(latLong, x, y + height + 10);
     
     // Image orientation, start of data corresponds to
     // 0: unspecified in EXIF data
@@ -247,4 +283,45 @@ ofVec3f ofApp::sphericalToCartesian( float lat, float lon, float radius )
 //    result.z = radius *sin(lat);
     
     return result;
+}
+
+//--------------------------------------------------------------
+
+
+void ofApp::processOpenFileSelection(ofFileDialogResult openFileResult){
+    
+    ofLogVerbose("getName(): "  + openFileResult.getName());
+    ofLogVerbose("getPath(): "  + openFileResult.getPath());
+    
+    ofFile file (openFileResult.getPath());
+    ofFilePath dirPath;
+    dirPath.getPathForDirectory(openFileResult.getPath());
+    
+    if (file.exists()){
+        
+        ofLogVerbose("The file exists - now checking the type via file extension");
+        string fileExtension = ofToUpper(file.getExtension());
+        
+        //We only want jpg images
+        if (fileExtension == "JPG") {
+            
+           // ofDirectory imageDirectory(ofToDataPath(dirPath));
+            ofDirectory imageDirectory("images");
+
+            imageDirectory.listDir();
+            imageDirectory.allowExt("jpg");
+            imageDirectory.sort(); // in linux the file system doesn't return file lists ordered in alphabetical order
+            
+            for (int i=0; i<imageDirectory.size(); i++){
+           
+                sign newSign;
+                newSign.load(imageDirectory.getPath(i));
+                newSign.image.resize(newSign.image.getWidth()/10, newSign.image.getHeight()/10);
+                signsOfSurveillance.push_back(newSign);
+  
+            }
+            
+        }
+    }
+    
 }
