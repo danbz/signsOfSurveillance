@@ -3,6 +3,8 @@
 #include "ofMain.h"
 #include "ofxExif.h"
 
+static ofTrueTypeFont signFont;
+
 class sign {
     public :
     
@@ -18,7 +20,7 @@ class sign {
     float getLong();
     float getDate();
     string getTime();
-    void draw(int x, int y, int width, int height);
+    void draw(int x, int y, int z, int width, int height);
     void load(string filePath);
     string getCountry();
     
@@ -58,7 +60,7 @@ class ofApp : public ofBaseApp{
     ofEasyCam cam;
     ofLight light;
     
-    bool b_drawGui;
+    bool b_drawGui, b_rotate;
     
     
 };
