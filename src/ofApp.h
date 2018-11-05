@@ -50,6 +50,8 @@ class ofApp : public ofBaseApp{
     
     ofVec3f sphericalToCartesian( float lat, float lon, float radius );
     void processOpenFileSelection(ofFileDialogResult openFileResult);
+    void sortSigns();
+    static  bool sortDescending(const sign &i, const sign &j);
     
     vector<sign> signsOfSurveillance;
     float rotateY;
