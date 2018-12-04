@@ -4,10 +4,15 @@
 
 //--------------------------------------------------------------
 void ofApp::setup(){
-    globeRadius = 500;
+    // set up sign sizes and distance from globe surface
     
+    gui.setup();
+    gui.add(signWidth.setup("signWidth", 5.0, 1.0, 20.0));
+    gui.add(signHeight.setup("signHeight", 2.0, 1.0, 20.0));
+    gui.add(signDist.setup("signDist", 8.0, 1.0, 20.0));
+    globeRadius = 2000;
     rotateY = 0.0f;
-    globe.set(globeRadius, 50);
+    globe.set(globeRadius, 100);
     
     ofDisableArbTex();
     // ofLoadImage(globeTexture,"EarthMap_1024x512.jpg");
@@ -18,12 +23,15 @@ void ofApp::setup(){
     ofDisableAlphaBlending();
     ofEnableDepthTest();
     // light.enable();
-    light.setPosition(ofVec3f(1000,1000,600));
+    light.setPosition(ofVec3f(2000,2000,1200));
     light.lookAt(ofVec3f(0,0,0));
     b_rotate = false;
-    cam.setTranslationKey(OF_KEY_ALT);
     
-    signFont.load( "sans-serif",  12);
+    signFont.load( "sans-serif",  6);
+    signFont.setGlobalDpi(800);
+  // cam.setTranslationKey(' ');
+
+    cam.setTarget(globe);
 }
 
 //--------------------------------------------------------------
@@ -40,15 +48,18 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
     ofBackground(0);
-    
+    if (cam.getDistance() <globeRadius + 7) {
+        cam.setDistance(globeRadius +7);
+        
+    }
     cam.begin();
    // ofPushMatrix();
     ofRotateYDeg(rotateY);
     ofDrawAxis(600);
     // ofDrawRotationAxes(600);
     globeTexture.bind();
-   // globe.draw();
-    globe.drawWireframe();
+    globe.draw();
+    //globe.drawWireframe();
     globeTexture.unbind();
     
     //    for (int i=0; i< signsOfSurveillance.size(); i++){
@@ -87,22 +98,26 @@ void ofApp::draw(){
         //spinQuat.makeRotate(0, 0, 1, 0);
         
         //our starting point is 0,0, on the surface of our sphere, this is where the meridian and equator meet
-        ofVec3f center = ofVec3f(0,0,520);
+        ofVec3f center = ofVec3f(0,0,globeRadius+signDist);
         //multiplying a quat with another quat combines their rotations into one quat
         //multiplying a quat to a vector applies the quat's rotation to that vector
         //so to to generate our point on the sphere, multiply all of our quaternions together then multiple the centery by the combined rotation
         ofVec3f worldPoint = latRot * longRot * spinQuat * center;
+        
         ofDrawLine(ofVec3f(0,0,0), worldPoint);
         
         // set the bitmap text mode billboard so the points show up correctly in 3d
         // ofDrawBitmapString(signsOfSurveillance[i].getTime(), worldPoint );
         // ofTranslate(0,0,worldPoint.z);
-        signsOfSurveillance[i].draw(worldPoint.x, worldPoint.y, worldPoint.z, 40, 20);
+        signsOfSurveillance[i].draw(worldPoint.x, worldPoint.y, worldPoint.z, signWidth, signHeight);
     }
    // ofPopMatrix();
     
     cam.end();
-    ofDrawBitmapString(ofToString( cam.getPosition() ), 10, 10);
+    ofDrawBitmapString(ofToString( cam.getPosition() ) + " camdistance: " + ofToString( cam.getDistance()), 10, 10);
+    ofSetColor(255);
+    gui.draw();
+   
 }
 
 //--------------------------------------------------------------
@@ -134,20 +149,35 @@ void ofApp::keyReleased(int key){
             
             break;
             
-        case 'l':
-            //Open the Open File Dialog to load text file
-            ofFileDialogResult openFileResult= ofSystemLoadDialog("Select a folder with jpg image files");
+//        case 'l':
+//            //Open the Open File Dialog to load text file
+//            ofFileDialogResult openFileResult= ofSystemLoadDialog("Select a folder with jpg image files");
+//
+//            //Check if the user opened a file
+//            if (openFileResult.bSuccess){
+//                ofLogVerbose("User selected a folder");
+//                //We have a file, check it and process it
+//                processOpenFileSelection(openFileResult);
+//
+//            }else {
+//                ofLogVerbose("User hit cancel");
+//            }
+//            break;
+    }
+    
+    if (key == 'l'){
+        //Open the Open File Dialog to load text file
+        ofFileDialogResult openFileResult= ofSystemLoadDialog("Select a folder with jpg image files");
+        
+        //Check if the user opened a file
+        if (openFileResult.bSuccess){
+            ofLogVerbose("User selected a folder");
+            //We have a file, check it and process it
+            processOpenFileSelection(openFileResult);
             
-            //Check if the user opened a file
-            if (openFileResult.bSuccess){
-                ofLogVerbose("User selected a folder");
-                //We have a file, check it and process it
-                processOpenFileSelection(openFileResult);
-                
-            }else {
-                ofLogVerbose("User hit cancel");
-            }
-            break;
+        }else {
+            ofLogVerbose("User hit cancel");
+        }
     }
 }
 
@@ -343,8 +373,7 @@ void ofApp::processOpenFileSelection(ofFileDialogResult openFileResult){
     
     ofFile file (openFileResult.getPath());
     ofFilePath dirPath;
-    dirPath.getPathForDirectory(openFileResult.getPath());
-    
+    cout << "path: " << ofToString( dirPath.getEnclosingDirectory(file) ) << endl;
     if (file.exists()){
         
         ofLogVerbose("The file exists - now checking the type via file extension");
@@ -354,13 +383,14 @@ void ofApp::processOpenFileSelection(ofFileDialogResult openFileResult){
         if (fileExtension == "JPG") {
             
             // ofDirectory imageDirectory(ofToDataPath(dirPath));
-            ofDirectory imageDirectory("images");
-            
+           // ofDirectory imageDirectory("images");
+            ofDirectory imageDirectory( dirPath.getEnclosingDirectory(file) );
+
             imageDirectory.listDir();
             imageDirectory.allowExt("jpg");
             imageDirectory.sort(); // in linux the file system doesn't return file lists ordered in alphabetical order
             
-            for (int i=0; i<imageDirectory.size(); i++){
+            for (int i=0; i<imageDirectory.size(); i++){ // TBD: need to send this sideways into a thread of its own
                 
                 sign newSign;
                 newSign.load(imageDirectory.getPath(i));

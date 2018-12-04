@@ -2,6 +2,7 @@
 
 #include "ofMain.h"
 #include "ofxExif.h"
+#include "ofxGui.h"
 
 static ofTrueTypeFont signFont;
 
@@ -64,5 +65,9 @@ class ofApp : public ofBaseApp{
     
     bool b_drawGui, b_rotate;
     
+   // int signWidth, signHeight, signDist;
+    
+    ofxPanel gui;
+    ofxFloatSlider signWidth, signHeight, signDist;
     
 };

@@ -1,2 +1,3 @@
 ofxExif
+ofxGui
 ofxXmlSettings
