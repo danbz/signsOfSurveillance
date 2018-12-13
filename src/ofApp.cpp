@@ -7,9 +7,9 @@ void ofApp::setup(){
     // set up sign sizes and distance from globe surface
     
     gui.setup();
-    gui.add(signWidth.setup("signWidth", 5.0, 1.0, 20.0));
-    gui.add(signHeight.setup("signHeight", 2.0, 1.0, 20.0));
-    gui.add(signDist.setup("signDist", 8.0, 1.0, 20.0));
+    gui.add(signWidth.setup("signWidth", 10.0, 1.0, 20.0));
+    //gui.add(signHeight.setup("signHeight", 2.0, 1.0, 20.0));
+    gui.add(signDist.setup("signDist", 10.0, 1.0, 20.0));
     globeRadius = 2000;
     rotateY = 0.0f;
     globe.set(globeRadius, 100);
@@ -32,6 +32,8 @@ void ofApp::setup(){
   // cam.setTranslationKey(' ');
 
     cam.setTarget(globe);
+    cam.setDistance(2400);
+    cam.setPosition(-300, 1720, -1650); // set camera looking at europe
 }
 
 //--------------------------------------------------------------
@@ -48,8 +50,10 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
     ofBackground(0);
-    if (cam.getDistance() <globeRadius + 7) {
-        cam.setDistance(globeRadius +7);
+    if (cam.getDistance() < globeRadius + 7) {
+        ofVec3f camPos = cam.getPosition();
+        cam.setDistance( globeRadius +7);
+        //cam.setPosition(camPos);
         
     }
     cam.begin();
@@ -87,6 +91,8 @@ void ofApp::draw(){
         //a third so that it spins along with the spinning sphere
         ofQuaternion latRot, longRot, spinQuat;
         
+        signWidth = (cam.getDistance()-2000)/10.0; // scale signs dependent upon camera distance from globe
+        signDist = (cam.getDistance()-2000)/10.0;
         float lat = signsOfSurveillance[i].getLat();
         float lon = signsOfSurveillance[i].getLong();
         lat *= -1;        // inverse latitude.
@@ -109,14 +115,18 @@ void ofApp::draw(){
         // set the bitmap text mode billboard so the points show up correctly in 3d
         // ofDrawBitmapString(signsOfSurveillance[i].getTime(), worldPoint );
         // ofTranslate(0,0,worldPoint.z);
-        signsOfSurveillance[i].draw(worldPoint.x, worldPoint.y, worldPoint.z, signWidth, signHeight);
+        signsOfSurveillance[i].draw(worldPoint.x, worldPoint.y, worldPoint.z, signWidth, signWidth*0.75);
     }
    // ofPopMatrix();
     
     cam.end();
-    ofDrawBitmapString(ofToString( cam.getPosition() ) + " camdistance: " + ofToString( cam.getDistance()), 10, 10);
     ofSetColor(255);
+    
     gui.draw();
+    
+    ofDrawBitmapString( " camdistance: " + ofToString( cam.getDistance()) +  "\n pos:" +  ofToString(cam.getPosition()) + " heading: " + ofToString( cam.getHeadingDeg())
+                       + " Lookat: " + ofToString( cam.getLookAtDir()) , 10, 10);
+   
    
 }
 
@@ -148,25 +158,17 @@ void ofApp::keyReleased(int key){
             sortSigns();
             
             break;
+        case 'h':
             
-//        case 'l':
-//            //Open the Open File Dialog to load text file
-//            ofFileDialogResult openFileResult= ofSystemLoadDialog("Select a folder with jpg image files");
-//
-//            //Check if the user opened a file
-//            if (openFileResult.bSuccess){
-//                ofLogVerbose("User selected a folder");
-//                //We have a file, check it and process it
-//                processOpenFileSelection(openFileResult);
-//
-//            }else {
-//                ofLogVerbose("User hit cancel");
-//            }
-//            break;
+            cam.setDistance(2400);
+            cam.setPosition(-300, 1720, -1650); // set camera looking at europe
+            break;
+            
+            
     }
     
     if (key == 'l'){
-        //Open the Open File Dialog to load text file
+        //Open the Open File Dialog to load image file
         ofFileDialogResult openFileResult= ofSystemLoadDialog("Select a folder with jpg image files");
         
         //Check if the user opened a file
@@ -301,7 +303,7 @@ void sign::draw(int x, int y, int z, int width, int height){
     float mapRotationXY =  v1.angle(XY);
     
     ofTranslate(x-width/2,  y-height/2, z);
-   // ofRotateDeg(mapRotationXY, 1, 0, 0);
+    ofRotateDeg(mapRotationXY, 1, 1, 0);
    // ofRotateYDeg(180);
     
     image.draw( 0, 0, width, height);
@@ -309,7 +311,7 @@ void sign::draw(int x, int y, int z, int width, int height){
    // image.draw( x-width/2,  y-height/2, z, width, height);
     
     // ofTranslate(0,0,z);
-    signFont.drawString(latLong, 0,  height);
+   // signFont.drawString(latLong, 0,  height);
    // signFont.drawString(latLong, x-width/2, y + height + 10);
     ofPopMatrix();
     // Image orientation, start of data corresponds to
