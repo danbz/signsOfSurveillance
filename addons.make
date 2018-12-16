@@ -1,3 +1,4 @@
 ofxExif
 ofxGui
+ofxThreadedImageLoader
 ofxXmlSettings

@@ -3,6 +3,7 @@
 #include "ofMain.h"
 #include "ofxExif.h"
 #include "ofxGui.h"
+#include "ofxThreadedImageLoader.h"
 
 static ofTrueTypeFont signFont;
 
@@ -21,7 +22,7 @@ class sign {
     float getLong();
     float getDate();
     string getTime();
-    void draw(int x, int y, int z, int width, int height);
+    void draw(int x, int y, int z, int scale);
     void load(string filePath);
     string getCountry();
     
@@ -39,15 +40,15 @@ class ofApp : public ofBaseApp{
 
 		void keyPressed(int key);
 		void keyReleased(int key);
-		void mouseMoved(int x, int y );
-		void mouseDragged(int x, int y, int button);
-		void mousePressed(int x, int y, int button);
-		void mouseReleased(int x, int y, int button);
-		void mouseEntered(int x, int y);
-		void mouseExited(int x, int y);
-		void windowResized(int w, int h);
-		void dragEvent(ofDragInfo dragInfo);
-		void gotMessage(ofMessage msg);
+//        void mouseMoved(int x, int y );
+//        void mouseDragged(int x, int y, int button);
+//        void mousePressed(int x, int y, int button);
+//        void mouseReleased(int x, int y, int button);
+//        void mouseEntered(int x, int y);
+//        void mouseExited(int x, int y);
+//        void windowResized(int w, int h);
+//        void dragEvent(ofDragInfo dragInfo);
+//        void gotMessage(ofMessage msg);
     
     ofVec3f sphericalToCartesian( float lat, float lon, float radius );
     void processOpenFileSelection(ofFileDialogResult openFileResult);
@@ -62,12 +63,12 @@ class ofApp : public ofBaseApp{
     ofTexture globeTexture;
     ofEasyCam cam;
     ofLight light;
-    
+    float rotateSpeed;
     bool b_drawGui, b_rotate;
-    
-   // int signWidth, signHeight, signDist;
-    
+        
     ofxPanel gui;
-    ofxFloatSlider signWidth, signHeight, signDist;
+    ofxFloatSlider signScale, signDist;
+    
+    ofxThreadedImageLoader loader;
     
 };

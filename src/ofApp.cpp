@@ -5,10 +5,10 @@
 //--------------------------------------------------------------
 void ofApp::setup(){
     // set up sign sizes and distance from globe surface
+    ofSetLogLevel(OF_LOG_VERBOSE);
     
     gui.setup();
-    gui.add(signWidth.setup("signWidth", 10.0, 1.0, 20.0));
-    //gui.add(signHeight.setup("signHeight", 2.0, 1.0, 20.0));
+    gui.add(signScale.setup("signWidth", 10.0, 1.0, 20.0));
     gui.add(signDist.setup("signDist", 10.0, 1.0, 20.0));
     globeRadius = 2000;
     rotateY = 0.0f;
@@ -29,18 +29,28 @@ void ofApp::setup(){
     
     signFont.load( "sans-serif",  6);
     signFont.setGlobalDpi(800);
-  // cam.setTranslationKey(' ');
-
+    // cam.setTranslationKey(' ');
+    
     cam.setTarget(globe);
     cam.setDistance(2400);
     cam.setPosition(-300, 1720, -1650); // set camera looking at europe
+    
+    rotateSpeed = 0.02;
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
+    int camDist = cam.getDistance();
+    if (camDist < globeRadius + 7) {
+        ofVec3f camPos = cam.getPosition();
+        cam.setDistance( globeRadius +7);
+    }
+    signScale = ((camDist - globeRadius)/5.0) + 5 ; // scale signs dependent upon camera distance from globe
+    signDist = ((camDist - globeRadius)/10.0) + 5;
+    
     if (b_rotate) {
         if (rotateY < 360){
-            rotateY+=0.05;
+            rotateY+=rotateSpeed;
         } else {
             rotateY =0;
         }
@@ -50,84 +60,35 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
     ofBackground(0);
-    if (cam.getDistance() < globeRadius + 7) {
-        ofVec3f camPos = cam.getPosition();
-        cam.setDistance( globeRadius +7);
-        //cam.setPosition(camPos);
-        
-    }
     cam.begin();
-   // ofPushMatrix();
+    // ofPushMatrix();
     ofRotateYDeg(rotateY);
     ofDrawAxis(600);
     // ofDrawRotationAxes(600);
     globeTexture.bind();
     globe.draw();
-    //globe.drawWireframe();
+    // globe.drawWireframe();
     globeTexture.unbind();
-    
-    //    for (int i=0; i< signsOfSurveillance.size(); i++){
-    //       ofPushMatrix();
-    //        // ofRotateYDeg(i*(360/signsOfSurveillance.size()));
-    //        // ofTranslate(globeRadius, 0);
-    //        ofVec3f drawLoc = sphericalToCartesian(signsOfSurveillance[i].getLat(), signsOfSurveillance[i].getLong(), globeRadius*1.05f);
-    //
-    //        ofDrawCircle(drawLoc.x, drawLoc.y, drawLoc.z, 10);
-    //       // ofTranslate(drawLoc);
-    //        // cout << "drawloc: " << i << " " << drawLoc << endl;
-    //        ofTranslate(0,0,drawLoc.z);
-    //        signsOfSurveillance[i].draw(drawLoc.x, drawLoc.y, 40, 20);
-    //
-    //        ofPopMatrix();
-    //    }
-    
-    /// new quaternion stuff
     ofSetColor(255, 255, 255, 20);
     
-    ofSetColor(255);
+    ofVec3f worldPoint;
     for(unsigned int i = 0; i < signsOfSurveillance.size(); i++){
-        //three rotations
-        //two to represent the latitude and lontitude of the city
-        //a third so that it spins along with the spinning sphere
-        ofQuaternion latRot, longRot, spinQuat;
-        
-        signWidth = (cam.getDistance()-2000)/10.0; // scale signs dependent upon camera distance from globe
-        signDist = (cam.getDistance()-2000)/10.0;
-        float lat = signsOfSurveillance[i].getLat();
-        float lon = signsOfSurveillance[i].getLong();
-        lat *= -1;        // inverse latitude.
-        // lat += 90;        // latitude offset to match geometry of the sphere.
-        // lon *= -1;        // inverse longitude.
-        lon += 180;        // longitude offset to match geometry of the sphere.
-        latRot.makeRotate(lat , 1, 0, 0);
-        longRot.makeRotate(lon, 0, 1, 0);
-        //spinQuat.makeRotate(0, 0, 1, 0);
-        
-        //our starting point is 0,0, on the surface of our sphere, this is where the meridian and equator meet
-        ofVec3f center = ofVec3f(0,0,globeRadius+signDist);
-        //multiplying a quat with another quat combines their rotations into one quat
-        //multiplying a quat to a vector applies the quat's rotation to that vector
-        //so to to generate our point on the sphere, multiply all of our quaternions together then multiple the centery by the combined rotation
-        ofVec3f worldPoint = latRot * longRot * spinQuat * center;
-        
+       worldPoint =  sphericalToCartesian(signsOfSurveillance[i].getLat(), signsOfSurveillance[i].getLong(), globeRadius+signDist);
         ofDrawLine(ofVec3f(0,0,0), worldPoint);
-        
         // set the bitmap text mode billboard so the points show up correctly in 3d
         // ofDrawBitmapString(signsOfSurveillance[i].getTime(), worldPoint );
         // ofTranslate(0,0,worldPoint.z);
-        signsOfSurveillance[i].draw(worldPoint.x, worldPoint.y, worldPoint.z, signWidth, signWidth*0.75);
+        signsOfSurveillance[i].draw(worldPoint.x, worldPoint.y, worldPoint.z, signScale);
     }
-   // ofPopMatrix();
-    
+    // ofPopMatrix();
     cam.end();
-    ofSetColor(255);
-    
-    gui.draw();
-    
-    ofDrawBitmapString( " camdistance: " + ofToString( cam.getDistance()) +  "\n pos:" +  ofToString(cam.getPosition()) + " heading: " + ofToString( cam.getHeadingDeg())
-                       + " Lookat: " + ofToString( cam.getLookAtDir()) , 10, 10);
    
-   
+    if (b_drawGui){
+        ofSetColor(255);
+        gui.draw();
+        ofDrawBitmapString( " camdistance: " + ofToString( cam.getDistance()) +  "\n pos:" +  ofToString(cam.getPosition()) + " heading: " + ofToString( cam.getHeadingDeg())
+                           + " Lookat: " + ofToString( cam.getLookAtDir()) , 10, 10);
+    }
 }
 
 //--------------------------------------------------------------
@@ -164,17 +125,13 @@ void ofApp::keyReleased(int key){
             cam.setPosition(-300, 1720, -1650); // set camera looking at europe
             break;
             
-            
     }
     
     if (key == 'l'){
-        //Open the Open File Dialog to load image file
         ofFileDialogResult openFileResult= ofSystemLoadDialog("Select a folder with jpg image files");
         
-        //Check if the user opened a file
         if (openFileResult.bSuccess){
             ofLogVerbose("User selected a folder");
-            //We have a file, check it and process it
             processOpenFileSelection(openFileResult);
             
         }else {
@@ -184,55 +141,9 @@ void ofApp::keyReleased(int key){
 }
 
 //--------------------------------------------------------------
-void ofApp::mouseMoved(int x, int y ){
-    
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseDragged(int x, int y, int button){
-    
-}
-
-//--------------------------------------------------------------
-void ofApp::mousePressed(int x, int y, int button){
-    
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseReleased(int x, int y, int button){
-    
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseEntered(int x, int y){
-    
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseExited(int x, int y){
-    
-}
-
-//--------------------------------------------------------------
-void ofApp::windowResized(int w, int h){
-    
-}
-
-//--------------------------------------------------------------
-void ofApp::gotMessage(ofMessage msg){
-    
-}
-
-//--------------------------------------------------------------
-void ofApp::dragEvent(ofDragInfo dragInfo){ 
-    
-}
-
-//--------------------------------------------------------------
 
 sign::sign(){  // sign constructor
-    // load image from supplied path
-    // load xml and extract lat long etc from XML
+   
 }
 
 //--------------------------------------------------------------
@@ -244,10 +155,14 @@ sign::~sign(){    // sign destuctor
 //--------------------------------------------------------------
 
 void sign::load(string imagePath){
+   // int imageScaleFactor = 10;
     cout << "loading: " << ofToString(imagePath) << endl;
-    image.load(imagePath);
-    // load XML from jpg
-    exifData =  getEXIF(imagePath);
+    ofImageLoadSettings myImageLoadSettings;
+    myImageLoadSettings.exifRotate = true;
+    image.load(imagePath, myImageLoadSettings );
+    // input routine here to resize images to target size if not already resized...
+    //  image.resize(image.getWidth()/imageScaleFactor, image.getHeight()/imageScaleFactor);
+    exifData =  getEXIF(imagePath);     // load XML from jpg
 }
 
 //--------------------------------------------------------------
@@ -288,81 +203,59 @@ string sign::getCountry(){
 
 //--------------------------------------------------------------
 
-void sign::draw(int x, int y, int z, int width, int height){
+void sign::draw(int x, int y, int z, int scale ){
+    int width, height;
+   // string latLong;
+    if (image.getWidth() > image.getHeight() ){ // determine portrait or landscape orientation
+        width =  scale;
+        height =  scale * 0.75;
+    } else  {
+        width =  scale * 0.75;
+        height =  scale;
+    }
     
-    string latLong;
-    latLong = ofToString(exifData.GeoLocation.Latitude) + ", " + ofToString(exifData.GeoLocation.Longitude);
+   // latLong = ofToString(exifData.GeoLocation.Latitude) + ", " + ofToString(exifData.GeoLocation.Longitude);
     // latLong += " orientation: " + ofToString(exifData.Orientation);
     //  image.rotate90(1);
     // rotate to orientate as tangent to line to globe centre
-  
     // rotate image perpendicluar to line to centre of globe
-    ofVec2f v1(0, 1); // constant for heading angle and vector calulations
+    ofVec2f v1(0, 1); // constant for heading angle and vector calculations
     ofVec2f XY(x,y);
     ofPushMatrix();
     float mapRotationXY =  v1.angle(XY);
     
-    ofTranslate(x-width/2,  y-height/2, z);
-    ofRotateDeg(mapRotationXY, 1, 1, 0);
-   // ofRotateYDeg(180);
+    ofTranslate(x-width/2.0,  y-height/2.0, z);
+    ofRotateDeg(mapRotationXY, 0, 1, 0);
+    // ofRotateYDeg(180);
     
-    image.draw( 0, 0, width, height);
-
-   // image.draw( x-width/2,  y-height/2, z, width, height);
+    image.draw( 0, 0, width, height) ;
     
     // ofTranslate(0,0,z);
-   // signFont.drawString(latLong, 0,  height);
-   // signFont.drawString(latLong, x-width/2, y + height + 10);
+    // signFont.drawString(latLong, 0,  height);
+    // signFont.drawString(latLong, x-width/2, y + height + 10);
     ofPopMatrix();
-    // Image orientation, start of data corresponds to
-    // 0: unspecified in EXIF data
-    // 1: upper left of image
-    // 3: lower right of image
-    // 6: upper right of image
-    // 8: lower left of image
-    // 9: undefined
 }
 
 //--------------------------------------------------------------
 
 ofVec3f ofApp::sphericalToCartesian( float lat, float lon, float radius ){
     ofVec3f result;
-    
-    //    lat *= -1;        // inverse latitude.
-    //    lat += 90;        // latitude offset to match geometry of the sphere.
-    //    lon *= -1;        // inverse longitude.
-    //    lon -= 90;        // longitude offset to match geometry of the sphere.
-    //
-    //    lat *= DEG_TO_RAD;
-    //    lon *= DEG_TO_RAD;
-    //    //  original version
-    //    result.x = radius * sin( lat ) * cos( lon );
-    //    result.y = radius * sin( lat ) * sin( lon );
-    //    result.z = radius * cos( lat );
-    
-    //    return result;
     // new quaternion example
-    
-    //three rotations
-    //two to represent the latitude and lontitude of the city
-    //a third so that it spins along with the spinning sphere
+    // three rotations, two to represent the latitude and lontitude of the city
+    // a third so that it spins along with the spinning sphere
     ofQuaternion latRot, longRot, spinQuat;
+    lat *= -1;        // inverse latitude.
+    lon += 180;        // longitude offset to match geometry of the sphere.
     latRot.makeRotate(lat, 1, 0, 0);
     longRot.makeRotate(lon, 0, 1, 0);
     spinQuat.makeRotate(0, 0, 1, 0);
     
     //our starting point is 0,0, on the surface of our sphere, this is where the meridian and equator meet
-    ofVec3f center = ofVec3f(0,0,600);
+    ofVec3f center = ofVec3f(0,0,globeRadius+signDist); // add distance above globe surface to draw to
     //multiplying a quat with another quat combines their rotations into one quat
     //multiplying a quat to a vector applies the quat's rotation to that vector
     //so to to generate our point on the sphere, multiply all of our quaternions together then multiple the centery by the combined rotation
     ofVec3f worldPoint = latRot * longRot * spinQuat * center;
-    
-    //draw it and label it
-    ofDrawLine(ofVec3f(0,0,0), worldPoint);
-    
-    //set the bitmap text mode billboard so the points show up correctly in 3d
-    // ofDrawBitmapString(cities[i].name, worldPoint );
     return worldPoint;
 }
 
@@ -375,30 +268,18 @@ void ofApp::processOpenFileSelection(ofFileDialogResult openFileResult){
     
     ofFile file (openFileResult.getPath());
     ofFilePath dirPath;
-    cout << "path: " << ofToString( dirPath.getEnclosingDirectory(file) ) << endl;
     if (file.exists()){
-        
         ofLogVerbose("The file exists - now checking the type via file extension");
         string fileExtension = ofToUpper(file.getExtension());
-        
-        //We only want jpg images
-        if (fileExtension == "JPG") {
-            
-            // ofDirectory imageDirectory(ofToDataPath(dirPath));
-           // ofDirectory imageDirectory("images");
+        if (fileExtension == "JPG") {         // We only want jpg images
             ofDirectory imageDirectory( dirPath.getEnclosingDirectory(file) );
-
             imageDirectory.listDir();
             imageDirectory.allowExt("jpg");
             imageDirectory.sort(); // in linux the file system doesn't return file lists ordered in alphabetical order
-            
-            for (int i=0; i<imageDirectory.size(); i++){ // TBD: need to send this sideways into a thread of its own
-                
+            for (int i=0; i<imageDirectory.size(); i++){
                 sign newSign;
-                newSign.load(imageDirectory.getPath(i));
-                newSign.image.resize(newSign.image.getWidth()/10, newSign.image.getHeight()/10);
+                newSign.load(imageDirectory.getPath(i)) ;
                 signsOfSurveillance.push_back(newSign);
-                
             }
         }
     }
