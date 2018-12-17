@@ -69,6 +69,6 @@ class ofApp : public ofBaseApp{
     ofxPanel gui;
     ofxFloatSlider signScale, signDist;
     
-    ofxThreadedImageLoader loader;
+   // ofxThreadedImageLoader loader;
     
 };

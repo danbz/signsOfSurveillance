@@ -1,7 +1,5 @@
 #include "ofApp.h"
 
-
-
 //--------------------------------------------------------------
 void ofApp::setup(){
     // set up sign sizes and distance from globe surface
@@ -27,14 +25,15 @@ void ofApp::setup(){
     light.lookAt(ofVec3f(0,0,0));
     b_rotate = false;
     
-    signFont.load( "sans-serif",  6);
-    signFont.setGlobalDpi(800);
-    // cam.setTranslationKey(' ');
+    signFont.load("FuturaLT.ttf", 6);
+    signFont.setGlobalDpi(192);
+    if  (!signFont.isLoaded()) {
+        cout << "font failed to load" << endl;
+    }
     
-    cam.setTarget(globe);
     cam.setDistance(2400);
     cam.setPosition(-300, 1720, -1650); // set camera looking at europe
-    
+    cam.setTarget(globe);
     rotateSpeed = 0.02;
 }
 
@@ -61,7 +60,6 @@ void ofApp::update(){
 void ofApp::draw(){
     ofBackground(0);
     cam.begin();
-    // ofPushMatrix();
     ofRotateYDeg(rotateY);
     ofDrawAxis(600);
     // ofDrawRotationAxes(600);
@@ -69,20 +67,17 @@ void ofApp::draw(){
     globe.draw();
     // globe.drawWireframe();
     globeTexture.unbind();
-    ofSetColor(255, 255, 255, 20);
+   // ofSetColor(255, 255, 255, 100);
     
     ofVec3f worldPoint;
     for(unsigned int i = 0; i < signsOfSurveillance.size(); i++){
-       worldPoint =  sphericalToCartesian(signsOfSurveillance[i].getLat(), signsOfSurveillance[i].getLong(), globeRadius+signDist);
+        worldPoint =  sphericalToCartesian(signsOfSurveillance[i].getLat(), signsOfSurveillance[i].getLong(), globeRadius+signDist);
         ofDrawLine(ofVec3f(0,0,0), worldPoint);
-        // set the bitmap text mode billboard so the points show up correctly in 3d
-        // ofDrawBitmapString(signsOfSurveillance[i].getTime(), worldPoint );
-        // ofTranslate(0,0,worldPoint.z);
+       
         signsOfSurveillance[i].draw(worldPoint.x, worldPoint.y, worldPoint.z, signScale);
     }
-    // ofPopMatrix();
     cam.end();
-   
+    
     if (b_drawGui){
         ofSetColor(255);
         gui.draw();
@@ -108,7 +103,6 @@ void ofApp::keyReleased(int key){
         case 'f':
         case 'F':
             ofToggleFullscreen();
-            
             break;
             
         case 'r':
@@ -117,10 +111,9 @@ void ofApp::keyReleased(int key){
             
         case 's':
             sortSigns();
-            
             break;
-        case 'h':
             
+        case 'h':
             cam.setDistance(2400);
             cam.setPosition(-300, 1720, -1650); // set camera looking at europe
             break;
@@ -141,21 +134,18 @@ void ofApp::keyReleased(int key){
 }
 
 //--------------------------------------------------------------
-
 sign::sign(){  // sign constructor
-   
+    
 }
 
 //--------------------------------------------------------------
-
 sign::~sign(){    // sign destuctor
     
 }
 
 //--------------------------------------------------------------
-
 void sign::load(string imagePath){
-   // int imageScaleFactor = 10;
+    // int imageScaleFactor = 10;
     cout << "loading: " << ofToString(imagePath) << endl;
     ofImageLoadSettings myImageLoadSettings;
     myImageLoadSettings.exifRotate = true;
@@ -166,46 +156,39 @@ void sign::load(string imagePath){
 }
 
 //--------------------------------------------------------------
-
 bool sign::isLandscape(){
     // return bool for image orientation
 }
 
 //--------------------------------------------------------------
-
 float sign::getLat(){
     return exifData.GeoLocation.Latitude;
 }
 
 //--------------------------------------------------------------
-
 float sign::getLong(){
     return  exifData.GeoLocation.Longitude;
 }
 
 //--------------------------------------------------------------
-
 float sign::getDate(){
     
 }
 
 //--------------------------------------------------------------
-
 string sign::getTime(){
     return exifData.DateTimeOriginal;
 };
 
 //--------------------------------------------------------------
-
 string sign::getCountry(){
     // calculate country
 }
 
 //--------------------------------------------------------------
-
 void sign::draw(int x, int y, int z, int scale ){
     int width, height;
-   // string latLong;
+     string signLabel;
     if (image.getWidth() > image.getHeight() ){ // determine portrait or landscape orientation
         width =  scale;
         height =  scale * 0.75;
@@ -214,25 +197,25 @@ void sign::draw(int x, int y, int z, int scale ){
         height =  scale;
     }
     
-   // latLong = ofToString(exifData.GeoLocation.Latitude) + ", " + ofToString(exifData.GeoLocation.Longitude);
-    // latLong += " orientation: " + ofToString(exifData.Orientation);
+    // signLabel = ofToString(exifData.GeoLocation.Latitude) + ", " + ofToString(exifData.GeoLocation.Longitude);
+    // signLabel += " orientation: " + ofToString(exifData.Orientation);
     //  image.rotate90(1);
     // rotate to orientate as tangent to line to globe centre
     // rotate image perpendicluar to line to centre of globe
-    ofVec2f v1(0, 1); // constant for heading angle and vector calculations
-    ofVec2f XY(x,y);
+    ofVec2f v1(0, -1); // constant for heading angle and vector calculations
+    ofVec2f XY(x,z);
     ofPushMatrix();
+    
     float mapRotationXY =  v1.angle(XY);
     
-    ofTranslate(x-width/2.0,  y-height/2.0, z);
-    ofRotateDeg(mapRotationXY, 0, 1, 0);
-    // ofRotateYDeg(180);
-    
+   // ofTranslate(x-width/2.0,  y-height/2.0, z);
+    ofTranslate(x, y, z);
+    ofRotateYDeg(-mapRotationXY + 180);
+    ofTranslate(-width/2.0,  -height/2.0, 0);
+    signLabel = ofToString( exifData.DateTime ) ;
     image.draw( 0, 0, width, height) ;
     
-    // ofTranslate(0,0,z);
-    // signFont.drawString(latLong, 0,  height);
-    // signFont.drawString(latLong, x-width/2, y + height + 10);
+    signFont.drawString(signLabel, width/2, height + 10);
     ofPopMatrix();
 }
 
